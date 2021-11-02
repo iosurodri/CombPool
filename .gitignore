@@ -111,6 +111,9 @@ reports/models/*
 *.xlsx
 config/model/train.json
 
+# Exclude images used in README.md
+!figures/**
+
 # Debug files:
 src/debug/*
 *.sh
