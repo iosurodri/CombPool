@@ -1,10 +1,11 @@
 import torch.nn as nn
+from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
 
 
 class LeNetPlus(nn.Module):
 
     def __init__(self, input_size, output_size, num_filters=[64, 64],
-                 fc_sizes=[384, 192, -1], pool_layer=nn.MaxPool2d, use_batch_norm=True):
+                 fc_sizes=[384, 192, -1], pool_layer=nn.MaxPool2d, use_batch_norm=True, aggregations=None):
         super().__init__()
         
         self.relu = nn.ReLU()
@@ -12,14 +13,20 @@ class LeNetPlus(nn.Module):
 
         # Layer "group" 0:
         self.conv_0 = nn.Conv2d(in_channels=input_size[2], out_channels=num_filters[0],
-                                   kernel_size=(3, 3), padding=(1, 1), bias=False)
-        self.pool_0 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
+                                kernel_size=(3, 3), padding=(1, 1), bias=True)
+        if pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+            self.pool_0 = pool_layer(kernel_size=(2, 2), stride=(2, 2), num_channels=num_filters[0], aggregations=aggregations)
+        else:
+            self.pool_0 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
         if use_batch_norm:
             self.batch_norm_0 = nn.BatchNorm2d(num_filters[0])
         # Layer group 1:
         self.conv_1 = nn.Conv2d(num_filters[0], out_channels=num_filters[1],
                                 kernel_size=(3, 3), padding=(1, 1), bias=True)
-        self.pool_1 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
+        if pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+            self.pool_1 = pool_layer(kernel_size=(2, 2), stride=(2, 2), num_channels=num_filters[1], aggregations=aggregations)
+        else:
+            self.pool_1 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
         if use_batch_norm:
             self.batch_norm_1 = nn.BatchNorm2d(num_filters[1])
         # MLP Classifier:
