@@ -17,9 +17,8 @@ from src.model_tools.evaluate import get_prediction_metrics
 from src.model_tools.save_model import save_model
 from src.model_tools.load_model import load_model
 
-from src.layers.pooling_layers import pickPoolLayer
-
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
+from src.functions.aux_functions import pickPoolLayer
 
 import json
 import argparse
@@ -43,10 +42,12 @@ def parse_args():
                                                                                'Defaults to "CIFAR10".')
     CLI.add_argument("--name", nargs="?", type=str, help='Name for the generated files. If none, a name based on the '
                                                          'current date and time will be used instead')
-    CLI.add_argument("--pool_type", nargs="?", type=str, default=None, help="Functions to be used for the pooling layer.")
+    CLI.add_argument("--pool_type", nargs="?", type=str, default='max', help="""Specifies the pooling layer to use. Defaults to MaxPool2d.
+        Set 'channelwise' for ChannelwiseCombPool2d. Set 'gated' for GatedCombPool2d.""")
+    CLI.add_argument("--pool_aggrs",  nargs="*", type=str, default=None, help="""List of aggregations to be used as pooling function. 
+        If None, pool_type should specify a fully functional pooling layer. If 'max', torch.nn.MaxPool2d will be used. 
+        If 'avg', torch.nn.AvgPool2d will be used. """)
     CLI.add_argument("--num_runs", nargs="?", type=int, default=5, help="Number of tests to be performed. Defaults to 5.")
-    CLI.add_argument("--initial_pool_exp", nargs="?", type=float, default=None, help='''If pool_type requires it, sets the 
-        initial value for the weight (exponent) ''')
     CLI.add_argument("--save_checkpoints", nargs="?", type=bool, default=False, help="""Indicates whether we will save
         the best version of the model obtained during training according to val loss, as well as the final model.""")
     CLI.add_argument("--log_param_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution
@@ -56,7 +57,7 @@ def parse_args():
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    pool_type='max', num_runs=5, initial_pool_exp=None):
+    pool_type='channelwise', pool_aggrs=None, num_runs=5):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -99,6 +100,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         momentum = model_params['momentum']
 
         info_data['pool_type'] = pool_type
+        info_data['pool_aggrs'] = pool_aggrs
 
     # Create folders for reports associated to test if not existant:
     try: 
@@ -129,11 +131,11 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         pool_layer = pickPoolLayer(pool_type)
 
         if model_type == 'lenet': 
-            model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm)
+            model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm, aggregations=pool_aggrs)
         elif model_type == 'nin':
-            model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], initial_pool_exp=initial_pool_exp)
+            model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
         elif model_type == 'dense':
-            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
+            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)  # ToDo: Add pool_aggrs
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
@@ -152,8 +154,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             optimizer = optim.Adam(trainable_parameters,
                                 lr=learning_rate, weight_decay=weight_decay)
         else:
-            raise Exception(
-                'Compatibility with the given optimizer has not been implemented yet')
+            raise Exception('Compatibility with the given optimizer has not been implemented yet')
 
         # Scheduler: On plateau
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
@@ -192,8 +193,8 @@ if __name__ == '__main__':
     num_runs = args.num_runs
     config_file_name = args.config_file_name
     pool_type = args.pool_type
-    initial_pool_exp = args.initial_pool_exp
+    pool_aggrs = args.pool_aggrs
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
-    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, num_runs=num_runs, save_checkpoints=save_checkpoints, 
-        config_file_name=config_file_name, log_param_dist=log_param_dist, initial_pool_exp=initial_pool_exp)
+    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, pool_aggrs=pool_aggrs, num_runs=num_runs, save_checkpoints=save_checkpoints, 
+        config_file_name=config_file_name, log_param_dist=log_param_dist)
