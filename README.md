@@ -16,6 +16,7 @@ La documentación está disponible en Inglés y Castellano.
 * [Main use cases (EN)](#main-use-cases-en).
 * [Casos de uso principales (ES)](#casos-de-uso-principales-es)
   * [Funcionamiento del script de pruebas](#funcionamiento-del-script-de-pruebas)
+  * [Evaluación de un modelo guardado](#evaluación-de-un-modelo-guardado)
   * [Generación de hojas de cálculo con resultados](#generación-de-hojas-de-cálculo-con-resultados)
   * [Organización de archivos de log para análisis mediante Tensorboard](#organización-de-archivos-de-log-para-análisis-mediante-tensorboard)
 
