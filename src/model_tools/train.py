@@ -8,7 +8,7 @@ from tqdm import tqdm
 from src.model_tools.save_model import save_model
 from src.visualization.visualize_distributions import visualize_heatmap, visualize_hist
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
-from src.layers.pooling_layers import GroupingPlusPool2d, GroupingCombPool2d
+from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
 
 PATH_ROOT = os.path.join('..', '..', 'reports')
 
@@ -55,13 +55,14 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         if log_param_dist:
             pool_idx = 0
             for param in model.children():
-                if type(param) in (GroupingPlusPool2d, GroupingCombPool2d): 
-                    if param.weight is not None:
-                        parameter = param.weight.cpu().detach().numpy().squeeze()
-                        if parameter.size == 1:
-                            writer.add_scalar('pool{}_weight'.format(pool_idx), parameter.item(), 0)
-                        else:
-                            writer.add_histogram('pool{}_weight'.format(pool_idx), parameter, 0)
+                if type(param) in (ChannelwiseCombPool2d, GatedCombPool2d): 
+                    if param.coefficients is not None:
+                        for coeff_idx, coeff in enumerate(param.coefficients):
+                            coefficient = coeff.cpu().detach().numpy().squeeze()
+                            if coefficient.size == 1:
+                                writer.add_scalar('pool{}_coefficient{}'.format(pool_idx, coeff_idx), coefficient.item(), 0)
+                            else:
+                                writer.add_histogram('pool{}_coefficient{}'.format(pool_idx, coeff_idx), coefficient, 0)
                     pool_idx += 1
 
     for epoch in tqdm(range(num_epochs), unit='epochs'):
@@ -117,16 +118,17 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     if log_param_dist:
                         pool_idx = 0
                         for param in model.children():
-                            if type(param) in (GroupingPlusPool2d, GroupingCombPool2d): 
-                                if param.weight is not None:
-                                    parameter = param.weight.cpu().detach().numpy().squeeze()
-                                    if parameter.size == 1:
-                                        writer.add_scalar('pool{}_weight'.format(pool_idx), parameter.item(), num_batches * epoch + (i + 1))
-                                    else:
-                                        writer.add_histogram('pool{}_weight'.format(pool_idx), parameter, num_batches * epoch + (i + 1))
-    #                                    info = {'pool{}_weight'.format(pool_idx): param.weight.cpu().valparam.weight.item()}
+
+                            if type(param) in (ChannelwiseCombPool2d, GatedCombPool2d): 
+                                if param.coefficients is not None:
+                                    for coeff_idx, coeff in enumerate(param.coefficients):
+                                        coefficient = coeff.cpu().detach().numpy().squeeze()
+                                        if coefficient.size == 1:
+                                            writer.add_scalar('pool{}_coefficient{}'.format(pool_idx, coeff_idx), coefficient.item(), num_batches * epoch + (i + 1))
+                                        else:
+                                            writer.add_histogram('pool{}_coefficient{}'.format(pool_idx, coeff_idx), coefficient, num_batches * epoch + (i + 1))
                                 pool_idx += 1
-                    #if log_param_conv:
+                    # if log_param_conv:
                         conv_idx = 0
                         for param in model.children():
                             if type(param) == torch.nn.Conv2d:
