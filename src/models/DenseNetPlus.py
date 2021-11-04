@@ -7,7 +7,8 @@ import torch.utils.checkpoint as cp
 from torch import Tensor
 from collections import OrderedDict
 
-from torchvision.models.utils import load_state_dict_from_url
+#from torchvision.models.utils import load_state_dict_from_url
+from torch.hub import load_state_dict_from_url
 
 from typing import Any, List
 
@@ -385,13 +386,13 @@ def _densenet(
     aggregations=None,
     **kwargs: Any
 ) -> DenseNetPlus:
-    model = BigDenseNet(growth_rate, num_layers, num_init_features, pool_layer=pool_layer, aggregations=aggregations, **kwargs)
+    model = BigDenseNetPlus(growth_rate, num_layers, num_init_features, pool_layer=pool_layer, aggregations=aggregations, **kwargs)
     if pretrained:
         _load_state_dict(model, model_urls[arch], progress)
     return model
 
 
-def load_pretrained_densenet(num_layers: int = 121, progress: bool = True, freeze_layers: bool = False, pool_layer=nn.AvgPool2d, aggregations=None, **kwargs: Any) -> BigDenseNet:
+def load_pretrained_densenet(num_layers: int = 121, progress: bool = True, freeze_layers: bool = False, pool_layer=nn.AvgPool2d, aggregations=None, **kwargs: Any) -> BigDenseNetPlus:
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
     Args:
