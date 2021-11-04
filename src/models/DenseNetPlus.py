@@ -11,7 +11,7 @@ from torchvision.models.utils import load_state_dict_from_url
 
 from typing import Any, List
 
-from src.visualization.visualize_distributions import visualize_heatmap, visualize_hist
+from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
 
 
 # AUXILIARY LAYERS DEFINITION:
@@ -85,13 +85,16 @@ class _DenseLayer(nn.Module):
 
 
 class _Transition(nn.Sequential):
-    def __init__(self, num_input_features, num_output_features, pool_layer=nn.AvgPool2d):
+    def __init__(self, num_input_features, num_output_features, pool_layer=nn.AvgPool2d, aggregations=None):
         super(_Transition, self).__init__()
         self.add_module('norm', nn.BatchNorm2d(num_input_features))
         self.add_module('relu', nn.ReLU(inplace=True))
         self.add_module('conv', nn.Conv2d(num_input_features, num_output_features,
                                           kernel_size=1, stride=1, bias=False))
-        self.add_module('pool', pool_layer(kernel_size=2, stride=2))
+        if pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+            self.add_module('pool', pool_layer(kernel_size=(2, 2), stride=(2, 2), num_channels=num_output_features, aggregations=aggregations))
+        else:
+            self.add_module('pool', pool_layer(kernel_size=2, stride=2))
 
 
 # DENSE BLOCK DEFINITION (Multiple DenseLayers):
@@ -139,7 +142,7 @@ class DenseNetPlus(nn.Module):
     #def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
     #             num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
     def __init__(self, growth_rate=12, num_layers=100, bn_size=4, drop_rate=0.2, num_classes=10,
-                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1):
+                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1, aggregations=None):
 
         super().__init__()
 
@@ -184,7 +187,7 @@ class DenseNetPlus(nn.Module):
             if i != len(block_config) - 1:
                 trans = _Transition(num_input_features=num_features,
                                     num_output_features=num_features // 2,  # Compression of 0.5
-                                    pool_layer=pool_layer)
+                                    pool_layer=pool_layer, aggregations=aggregations)
                 self.features.add_module('transition%d' % (i + 1), trans)
                 num_features = num_features // 2  # We have compressed the feature image by a factor of 0.5
 
@@ -230,6 +233,7 @@ model_urls = {
 }
 
 
+
 class BigDenseNet(nn.Module):
     r"""Densenet-BC model class, based on
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
@@ -246,7 +250,7 @@ class BigDenseNet(nn.Module):
     """
 
     def __init__(self, growth_rate=32, num_layers=121, num_init_features=None, bn_size=4, drop_rate=0, num_classes=3,
-                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1):
+                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1, aggregations=None):
 
         super(BigDenseNet, self).__init__()
 
@@ -289,7 +293,7 @@ class BigDenseNet(nn.Module):
             if i != len(block_config) - 1:
                 trans = _Transition(num_input_features=num_features,
                                     num_output_features=num_features // 2,
-                                    pool_layer=pool_layer)
+                                    pool_layer=pool_layer, aggregations=aggregations)
                 self.features.add_module('transition%d' % (i + 1), trans)
                 num_features = num_features // 2
 
@@ -378,15 +382,16 @@ def _densenet(
     pretrained: bool,
     progress: bool,
     pool_layer=nn.AvgPool2d,
+    aggregations=None,
     **kwargs: Any
 ) -> DenseNetPlus:
-    model = BigDenseNet(growth_rate, num_layers, num_init_features, pool_layer=pool_layer,**kwargs)
+    model = BigDenseNet(growth_rate, num_layers, num_init_features, pool_layer=pool_layer, aggregations=aggregations, **kwargs)
     if pretrained:
         _load_state_dict(model, model_urls[arch], progress)
     return model
 
 
-def load_pretrained_densenet(num_layers: int = 121, progress: bool = True, freeze_layers: bool = False, pool_layer=nn.AvgPool2d, **kwargs: Any) -> BigDenseNet:
+def load_pretrained_densenet(num_layers: int = 121, progress: bool = True, freeze_layers: bool = False, pool_layer=nn.AvgPool2d, aggregations=None, **kwargs: Any) -> BigDenseNet:
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
     Args:
@@ -400,7 +405,7 @@ def load_pretrained_densenet(num_layers: int = 121, progress: bool = True, freez
     if num_layers not in available_models:
         raise Exception('Number of layers must be one of: {}'.format(available_models))
     model = _densenet('densenet{}'.format(str(num_layers)), growth_rate=32, num_layers=num_layers, num_init_features=64,
-                      pretrained=True, progress=progress, pool_layer=pool_layer, **kwargs)
+                      pretrained=True, progress=progress, pool_layer=pool_layer, aggregations=aggregations, **kwargs)
     for param_name, parameter in model.named_parameters():
         # By default, freeze all model parameters:
         freeze_parameter = True

@@ -134,8 +134,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm, aggregations=pool_aggrs)
         elif model_type == 'nin':
             model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
-        elif model_type == 'dense':
-            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)  # ToDo: Add pool_aggrs
+        elif model_type == 'dense100':
+            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)  # ToDo: Add pool_aggrs
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
