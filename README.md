@@ -221,7 +221,7 @@ Examples must be run from the folder which contain each particular script:
 
 ```
 # From src/runs/
-python src/runs/run_test.py lenet --dataset CIFAR10 --pool_type max --num_runs 1 --name example_lenet_max
+python run_test.py lenet --dataset CIFAR10 --pool_type max --num_runs 1 --name example_lenet_max
 ```
 
 2. Train a 'DenseNet' model with CombPool layers (max + avg) with 100 layers using the configuration set in */config/densenet_parameters.json* on CIFAR10 dataset:
