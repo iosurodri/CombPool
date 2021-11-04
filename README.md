@@ -19,6 +19,8 @@ La documentación está disponible en Inglés y Castellano.
   * [Evaluación de un modelo guardado](#evaluación-de-un-modelo-guardado)
   * [Generación de hojas de cálculo con resultados](#generación-de-hojas-de-cálculo-con-resultados)
   * [Organización de archivos de log para análisis mediante Tensorboard](#organización-de-archivos-de-log-para-análisis-mediante-tensorboard)
+* [Examples (EN)](#examples-en)
+* [Ejemplos (ES)](#ejemplos-es)
 
 ## Main use cases (EN)
 
@@ -41,9 +43,12 @@ Coming soon...
 		
         Nota: 
         
-            /reports/models: Almacena los parámetros de los modelos ya entrenados para su posterior carga (si fuera necesario).  
-            /reports/results: Almacena los resultados de métricas de los distintos modelos entrenados, medidos sobre la partición de test (en ficheros de nombre test_metrics.txt).
-		 	/reports/runs: Almacena logs generados usando la herramienta Tensorboard para su posterior carga con dicha herramienta.
+		```
+		/reports/models: Almacena los parámetros de los modelos ya entrenados para su posterior carga (si fuera necesario).  
+		/reports/results: Almacena los resultados de métricas de los distintos modelos entrenados, medidos sobre la partición de test (en ficheros de nombre test_metrics.txt).
+		/reports/runs: Almacena logs generados usando la herramienta Tensorboard para su posterior carga con dicha herramienta.
+		```
+
 	5. Se entra en el bucle principal del programa: Cada iteración del bucle entrena un modelo distinto y repite los siguientes pasos:
         1. Se genera una nueva carpeta dentro de la carpeta de test creada previamente con nombre "test0", "test1", etc.
       	2. Se genera un nuevo modelo a partir de los parámetros cargados. Se generan los objetos optimizer, scheduler y criterion necesarios para el entrenamiento.
@@ -78,14 +83,16 @@ Coming soon...
 
 Nota: Requiere haber almacenado los modelos entrenados en una carpeta "test_name" con la estructura:
 
-	/reports
-		/models
-			/test_name
-				test_0
-				test_0_info.json
-				test_1
-				test_1_info.json
-				...
+```
+/reports
+	/models
+		/test_name
+			test_0
+			test_0_info.json
+			test_1
+			test_1_info.json
+			...
+```
 				
 Donde "test_name" es un nombre de ejemplo para un test ejecutado mediante el script */src/runs/run_test.py*.
 
@@ -101,24 +108,25 @@ Basta con ejecutar el script */src/runs/run_evaluation.py* indicando como parám
 ### Generación de hojas de cálculo con resultados
 
 Nota: Requiere haber almacenado los resultados de la evaluación de distintos modelos en una carpeta "group_of_tests" con la estructura:
-	
-    /reports
-		/results
-			/group_of_tests
-				/test_name0
-					/test0
-						test_metrics.txt
-					/test1
-						test_metrics.txt
-					...
-				/test_name1
-					/test0
-						test_metrics.txt
-					/test1
-						test_metrics.txt
-					...
-				...
 
+```	
+/reports
+	/results
+		/group_of_tests
+			/test_name0
+				/test0
+					test_metrics.txt
+				/test1
+					test_metrics.txt
+				...
+			/test_name1
+				/test0
+					test_metrics.txt
+				/test1
+					test_metrics.txt
+				...
+			...
+```
 Donde "test_name1", "test_name2", etc. son nombres de ejemplo para una serie de tests ejecutado mediante el script */src/runs/run_test.py* y "group_of_tests" es el nombre de una carpeta que los contiene a todos ellos (generada manualmente por el usuario).
 
 Basta con ejecutar el script */src/data/summarize_excel.py* indicando como parámetro el nombre de la carpeta padre (en el ejemplo, "group_of_tests").
@@ -136,22 +144,24 @@ Basta con ejecutar el script */src/data/summarize_excel.py* indicando como pará
 
 Nota: Requiere haber almacenado los logs del entrenamiento de distintos modelos en una carpeta "group_of_tests" con la estructura:
 	
-    /reports
-		/results
-			/group_of_tests
-				/test_name0
-					/test0
-						events.out.tfevents.XXX
-					/test1
-						events.out.tfevents.XXX
-					...
-				/test_name1
-					/test0
-						events.out.tfevents.XXX
-					/test1
-						events.out.tfevents.XXX
-					...
+```
+/reports
+	/results
+		/group_of_tests
+			/test_name0
+				/test0
+					events.out.tfevents.XXX
+				/test1
+					events.out.tfevents.XXX
 				...
+			/test_name1
+				/test0
+					events.out.tfevents.XXX
+				/test1
+					events.out.tfevents.XXX
+				...
+			...
+```
 
 Donde "test_name1", "test_name2", etc. son nombres de ejemplo para una serie de tests ejecutado mediante el script */src/runs/run_test.py* y "group_of_tests" es el nombre de una carpeta que los contiene a todos ellos (generada manualmente por el usuario).
 
@@ -165,3 +175,72 @@ Basta con ejecutar el script */src/data/organize_runs.py* indicando como paráme
 		1. Se recorren todas las carpetas "test0", "test1", etc. copiándolas, junto con sus contenidos, a nuevas carpetas con nombre "/reports/results/group_of_tests/tests/test_name0_test_0", etc.
 	
 Posteriormente, puede ejecutarse la herramienta tensorboard, desde la carpeta */reports/results/group_of_tests* mediante el comando "tensorboard --logdir tests".
+
+
+## Examples (EN)
+
+All tests are assumed to be run from the project root:
+
+1. Train a 'LeNet-5' model using Max pooling on CIFAR10 dataset:
+
+```
+python src/runs/run_test.py lenet --dataset CIFAR10 --pool_type max --num_runs 1 --name example_lenet_max
+```
+
+2. Train a 'DenseNet' model with CombPool layers (max + avg) with 100 layers using the configuration set in */config/densenet_parameters.json* on CIFAR10 dataset:
+
+```
+python src/runs/run_test.py dense100 --dataset CIFAR100 --pool_type channelwise --pool_aggrs max avg --config_file_name densenet_parameters.json
+```
+
+3. Evaluate a model trained on test "test_name":
+   
+```
+python src/runs/run_evaluation.py test_name
+```
+
+4. Organize the logfile generated by Tensorboard for the runs of tests (manually) grouped inside the folder */reports/runs/group_of_tests*:
+
+```
+python src/data/organize_runs.py group_of_tests
+```
+
+5. Create a spreadsheet summary for the results of the runs of tests (manually) grouped inside the folder */reports/results/group_of_tests*:
+
+```
+python src/data/summarize_excel.py group_of_tests
+```
+
+## Ejemplos (ES)
+
+Se asume que todos los ejemplos se ejecutarán desde la raíz del proyecto:
+
+1. Entrena un modelo 'LeNet-5' con Max pooling sobre el dataset CIFAR10:
+
+```
+python src/runs/run_test.py lenet --dataset CIFAR10 --pool_type max --num_runs 1 --name example_lenet_max
+```
+
+2. Entrena un modelo 'DenseNet' con capas CombPool (max + media) de 100 capas, usando la configuración fijada en */config/densenet_parameters.json* sobre el dataset CIFAR10:
+
+```
+python src/runs/run_test.py dense100 --dataset CIFAR100 --pool_type channelwise --pool_aggrs max avg --config_file_name densenet_parameters.json
+```
+
+3. Evalúa un modelo entrenado en el test "test_name":
+   
+```
+python src/runs/run_evaluation.py test_name
+```
+
+4. Organiza los logfiles generados por Tensorboard durante las ejecuciones de tests agrupados (manualmente) dentro de la carpeta */reports/runs/group_of_tests*:
+
+```
+python src/data/organize_runs.py group_of_tests
+```
+
+5. Crea un resumen en una hoja de cálculo para los resultados de tests agrupados (manualmente) dentro de la carpeta */reports/results/group_of_tests*:
+
+```
+python src/data/summarize_excel.py group_of_tests
+```
