@@ -234,7 +234,7 @@ model_urls = {
 
 
 
-class BigDenseNet(nn.Module):
+class BigDenseNetPlus(nn.Module):
     r"""Densenet-BC model class, based on
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
     Args:
@@ -252,7 +252,7 @@ class BigDenseNet(nn.Module):
     def __init__(self, growth_rate=32, num_layers=121, num_init_features=None, bn_size=4, drop_rate=0, num_classes=3,
                  memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1, aggregations=None):
 
-        super(BigDenseNet, self).__init__()
+        super(BigDenseNetPlus, self).__init__()
 
         if num_layers == 121:
             block_config = (6, 12, 24, 16)
