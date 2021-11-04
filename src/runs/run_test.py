@@ -9,7 +9,7 @@ from src.data.save_results import log_eval_metrics
 # Trainable models:
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
-from src.models.DenseNetPlus import DenseNetPlus
+from src.models.DenseNetPlus import DenseNetPlus, BigDenseNetPlus
 
 # Model interaction:
 from src.model_tools.train import train
@@ -135,7 +135,9 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         elif model_type == 'nin':
             model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
         elif model_type == 'dense100':
-            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)  # ToDo: Add pool_aggrs
+            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
+        elif model_type == 'big_dense121':
+            model = BigDenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=121, aggregations=pool_aggrs)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
