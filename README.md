@@ -19,9 +19,8 @@ La documentación está disponible en Inglés y Castellano.
   * [Evaluación de un modelo guardado](#evaluación-de-un-modelo-guardado)
   * [Generación de hojas de cálculo con resultados](#generación-de-hojas-de-cálculo-con-resultados)
   * [Organización de archivos de log para análisis mediante Tensorboard](#organización-de-archivos-de-log-para-análisis-mediante-tensorboard)
-* [Examples (EN)](#examples-en)
-* [Ejemplos (ES)](#ejemplos-es)
-* [Requirements (EN)](#requirements-en)
+* [Examples (EN)](#examples-en) / [Ejemplos (ES)](#ejemplos-es)
+* [Requirements (EN)](#requirements-en) / [Requisitos (ES)](#requisitos-es)
 
 ## Main use cases (EN)
 
@@ -212,6 +211,7 @@ Basta con ejecutar el script */src/data/organize_runs.py* indicando como paráme
 	
 Posteriormente, puede ejecutarse la herramienta tensorboard, desde la carpeta */reports/results/group_of_tests* mediante el comando "tensorboard --logdir tests".
 
+---
 
 ## Examples (EN)
 
@@ -291,13 +291,15 @@ python organize_runs.py group_of_tests
 python summarize_excel.py group_of_tests
 ```
 
+---
+
 ## Requirements (EN)
 
 The following command creates a conda environment with all the libraries necessary to run this project:
 
 **CUDA installation**
 
-Using Anaconda:
+Using Anaconda (**Recommended**):
 
 ```
 # From the root folder
@@ -308,7 +310,7 @@ conda config --add channels pytorch
 conda create --name comb-pool-cuda --file requirements_cuda.txt
 ```
 
-Using pip:
+Using pip (Untested):
 
 ```
 python3 -m venv comb-pool-cuda
@@ -317,7 +319,7 @@ pip install -r requirements_cuda_pip.txt
 
 **CPU installation**
 
-Using Anaconda:
+Using Anaconda (**Recommended**):
 
 ```
 # From the root folder
@@ -328,7 +330,51 @@ conda config --add channels pytorch
 conda create --name comb-pool-cpu --file requirements.txt
 ```
 
-Using pip:
+Using pip (Untested):
+
+```
+python3 -m venv comb-pool-cpu
+pip install -r requirements_pip.txt
+```
+
+## Requisitos (ES)
+
+Los siguientes comandos crean un entorno de conda con todas las librerías necesarias para ejecutar este proyecto:
+
+**CUDA installation**
+
+Usando Anaconda (**Recomendado**):
+
+```
+# Desde el directorio raíz
+conda env create -f environment_cuda.yml
+# Alternativamente puedes usar:
+conda config --add channels conda-forge
+conda config --add channels pytorch
+conda create --name comb-pool-cuda --file requirements_cuda.txt
+```
+
+Usando pip (No probado):
+
+```
+python3 -m venv comb-pool-cuda
+pip install -r requirements_cuda_pip.txt
+```
+
+**CPU installation**
+
+Usando Anaconda (**Recomendado**):
+
+```
+# Desde el directorio raíz
+conda env create -f environment_cpu.yml
+# Alternativamente puedes usar:
+conda config --add channels conda-forge
+conda config --add channels pytorch
+conda create --name comb-pool-cpu --file requirements.txt
+```
+
+Usando pip (No probado):
 
 ```
 python3 -m venv comb-pool-cpu
