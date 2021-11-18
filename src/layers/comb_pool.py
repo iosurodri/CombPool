@@ -75,4 +75,4 @@ class ChannelwiseCombPool2d(CombPool2d):
 class GatedCombPool2d(CombPool2d):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1, num_channels=1,
                  aggregations=['avg', 'max']):
-        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='channelwise')
+        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='gated')
