@@ -29,10 +29,10 @@ class CombPool2d(torch.nn.Module):
             self.aggregations.append(aggr_funcs.choose_aggregation(aggr))
         if coefficient_type == 'channelwise':
             # One value by channel (depth dimension)
-            self.coefficients = torch.nn.ParameterList([torch.nn.Parameter(torch.rand(1, num_channels, 1, 1)) for i in range(len(self.aggregations))])
+            self.weight = torch.nn.ParameterList([torch.nn.Parameter(torch.rand(1, num_channels, 1, 1)) for i in range(len(self.aggregations))])
         elif coefficient_type == 'gated':
             # A series of weights which help to generate a different alpha value for each value of a window            
-            self.coefficients = torch.nn.ParameterList(
+            self.weight = torch.nn.ParameterList(
                 [torch.nn.Parameter(torch.rand(1, num_channels, 1, 1, kernel_size*kernel_size)) for i in range(len(self.aggregations))]
             )
         else:
@@ -44,7 +44,7 @@ class CombPool2d(torch.nn.Module):
         if isinstance(self.padding, list) or isinstance(self.padding, tuple):
             input = F.pad(input, self.padding)
         if self.coefficient_type == 'channelwise':
-            new_coefficients = [x**2 for x in self.coefficients]
+            coefficients = [x**2 for x in self.weight]
         if self.coefficient_type == 'gated':
             # This learning method indicates that the value of alpha is computed as the product of a window of values
             # with each patch of the image, and applying a sigmoid function to the output, in order to get a value in (0, 1):
@@ -54,7 +54,7 @@ class CombPool2d(torch.nn.Module):
             tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
                                      self.kernel_size[0] * self.kernel_size[1]))
             # 3.-Compute the value of alpha (depends on weights, bias and each of the windows to be applied to):
-            new_coefficients = list(map(lambda x: torch.sigmoid(torch.sum(tensor * x, dim=-1, keepdim=False)), self.coefficients))
+            coefficients = list(map(lambda x: torch.sigmoid(torch.sum(tensor * x, dim=-1, keepdim=False)), self.weight))
         # 4.-Unfold the values of each patch to be aggregated
         tensor = input.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
         tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3], self.kernel_size[0] * self.kernel_size[1]))
@@ -62,7 +62,7 @@ class CombPool2d(torch.nn.Module):
         # Generate an auxiliar tensor the size of input, with as many values for the last dimension as groupings to apply
         output_tensor = tensor.new_zeros(tensor.shape[:-1])
         for idx, aggregation in enumerate(self.aggregations):
-            output_tensor += new_coefficients[idx] * aggregation(tensor, dim=-1) 
+            output_tensor += coefficients[idx] * aggregation(tensor, dim=-1) 
         return output_tensor
 
 
@@ -75,4 +75,4 @@ class ChannelwiseCombPool2d(CombPool2d):
 class GatedCombPool2d(CombPool2d):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1, num_channels=1,
                  aggregations=['avg', 'max']):
-        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='channelwise')
+        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='gated')
