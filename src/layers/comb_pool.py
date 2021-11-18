@@ -75,4 +75,63 @@ class ChannelwiseCombPool2d(CombPool2d):
 class GatedCombPool2d(CombPool2d):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1, num_channels=1,
                  aggregations=['avg', 'max']):
-        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='gated')
+        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='channelwise')
+
+
+class GlobalCombPool2d(torch.nn.Module):
+    def __init__(self, num_channels=1, input_size=None, aggregations=['avg', 'max'], coefficient_type='channelwise'):
+        # INPUTS:
+        # coefficient_type: str -> Indicates the way in which coefficients are to be computed
+        #   coefficient_type == 'channelwise' -> A different coefficient for each channel of the layer
+        #   coefficient_type == 'gated' -> A different coefficient will be computed for each window of the input, through a linear regression.
+        # NOTE: aggregations expects a one element list to show a similar implementation than Conv2dGeneric.__init__()
+        super().__init__()
+
+        if len(aggregations) == 1:
+            print('Warning: Number of chosen aggregations is 1. Make sure this is the intended behaviour.')
+        self.aggregations = []
+        for aggr in aggregations:
+            self.aggregations.append(aggr_funcs.choose_aggregation(aggr))
+        if coefficient_type == 'channelwise':
+            # One value by channel (depth dimension)
+            self.weight = torch.nn.ParameterList([torch.nn.Parameter(torch.rand(1, num_channels)) for i in range(len(self.aggregations))])
+        elif coefficient_type == 'gated':
+            # A series of weights which help to generate a different alpha value for each value of a window
+            if input_size is None:
+                raise Exception('input_size cannot be None when coefficient_type == gated')
+            self.weight = torch.nn.ParameterList(
+                [torch.nn.Parameter(torch.rand(1, num_channels, 1, input_size[0]*input_size[1])) for i in range(len(self.aggregations))]
+            )
+        else:
+            raise Exception('Wrong option specified for coefficient_type. Must be one of "channelwise" or "gated"')
+        self.coefficient_type = coefficient_type        
+        
+
+    def forward(self, input):
+        if self.coefficient_type == 'channelwise':
+            coefficients = [x**2 for x in self.weight]
+        if self.coefficient_type == 'gated':
+            # This learning method indicates that the value of alpha is computed as the product of a window of values
+            # with each patch of the image, and applying a sigmoid function to the output, in order to get a value in (0, 1):
+            # 1.-Turn each one of those 2D patches into a 1D vector:
+            tensor = input.reshape((input.shape[0], input.shape[1], input.shape[2] * input.shape[3]))
+            # 2.-Compute the value of alpha (depends on weights, bias and each of the windows to be applied to):
+            coefficients = list(map(lambda x: torch.sigmoid(torch.sum(tensor * x, dim=-1, keepdim=False)), self.weight))
+        # 4.-Reshape the values to be aggregated
+        tensor = input.reshape((input.shape[0], input.shape[1], input.shape[2] * input.shape[3]))
+        # 5.-Compute reduction based on the chosen functions:
+        # Generate an auxiliar tensor the size of input, with as many values for the last dimension as groupings to apply
+        output_tensor = tensor.new_zeros(tensor.shape[:-1])
+        for idx, aggregation in enumerate(self.aggregations):
+            output_tensor += coefficients[idx] * aggregation(tensor, dim=-1) 
+        return output_tensor
+
+
+class ChannelwiseGlobalCombPool2d(GlobalCombPool2d):
+    def __init__(self, num_channels=1, input_size=None, aggregations=['avg', 'max']):
+        super().__init__(num_channels, input_size, aggregations, coefficient_type='channelwise')
+
+
+class GatedGlobalCombPool2d(GlobalCombPool2d):
+    def __init__(self, num_channels=1, input_size=None, aggregations=['avg', 'max']):
+        super().__init__(num_channels, input_size, aggregations, coefficient_type='channelwise')

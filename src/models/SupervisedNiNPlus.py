@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 from math import ceil, floor
-from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
+from src.layers.comb_pool import *
 
 
 # ToDO: Refactorize this layers to a separate module:
@@ -35,7 +35,7 @@ class SupervisedNiNPlus(nn.Module):
         'mlpconv_neurons': (128, 192, 256)
     }
 
-    def __init__(self, pool_layer=nn.MaxPool2d, supervision_type='softmax', in_channels=3, num_classes=10, input_size=(32, 32), 
+    def __init__(self, pool_layer=nn.MaxPool2d, global_pool_type='avg', supervision_type='softmax', in_channels=3, num_classes=10, input_size=(32, 32), 
         aggregations=None):
         '''Constructor method
 
@@ -74,6 +74,9 @@ class SupervisedNiNPlus(nn.Module):
         elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, 
                 num_channels=self.network_params['conv_filters'][1], aggregations=aggregations)
+        # elif issubclass(pool_layer, ConstantCombPool2d):
+        #     self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad,
+        #         num_channels=self.network_params['conv_filters'][1], aggregations=aggregations)
         else:
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad)
 
@@ -126,10 +129,19 @@ class SupervisedNiNPlus(nn.Module):
                                           kernel_size=1, stride=1, bias=True)
         self.block_3_mlpconv2 = nn.Conv2d(self.network_params['mlpconv_neurons'][2], num_classes, kernel_size=1,
                                           stride=1, bias=True)
-
-        self.avg_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
-            # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
-            # having to set the size of the output up at to this point (which may vary depending on the used dataset).
+        if global_pool_type == 'avg':
+            self.global_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
+                # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
+                # having to set the size of the output up at to this point (which may vary depending on the used dataset).
+        elif global_pool_type == 'max':
+            self.global_pool = nn.AdaptiveMaxPool2d(output_size=1)
+        elif global_pool_type == 'channelwise':
+            self.global_pool = ChannelwiseGlobalCombPool2d(num_channels=num_classes, aggregations=aggregations)
+        elif global_pool_type == 'gated':
+            raise Exception('Global pooling option "gated" not yet implemented.')
+            # self.global_pool = GatedGlobalCombPool2d(num_channels=out_channels, aggregations=pool_aggrs)
+        else:
+            raise Exception('Global pooling option {} is not implemented.'.format(global_pool_type))
 
 
     def forward(self, input):
@@ -172,7 +184,7 @@ class SupervisedNiNPlus(nn.Module):
             x_supervised.append(self.block_3_supervision2(x))
         x = self.block_3_mlpconv1(x)
         x = self.block_3_mlpconv2(x)
-        x = self.avg_pool(x)
+        x = self.global_pool(x)
 
         x = x.reshape([x.shape[0], x.shape[1]])
 
