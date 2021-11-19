@@ -12,7 +12,7 @@ from torch.hub import load_state_dict_from_url
 
 from typing import Any, List
 
-from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
+from src.layers.comb_pool import *
 
 
 # AUXILIARY LAYERS DEFINITION:
@@ -143,7 +143,7 @@ class DenseNetPlus(nn.Module):
     #def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
     #             num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
     def __init__(self, growth_rate=12, num_layers=100, bn_size=4, drop_rate=0.2, num_classes=10,
-                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1, aggregations=None):
+                 memory_efficient=False, pool_layer=nn.AvgPool2d, global_pool_type='max', in_channels=3, classifier_layers=1, aggregations=None):
 
         super().__init__()
 
@@ -195,6 +195,20 @@ class DenseNetPlus(nn.Module):
         # Final batch norm
         self.features.add_module('norm4', nn.BatchNorm2d(num_features))
 
+        if global_pool_type == 'avg':
+            self.global_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
+                # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
+                # having to set the size of the output up at to this point (which may vary depending on the used dataset).
+        elif global_pool_type == 'max':
+            self.global_pool = nn.AdaptiveMaxPool2d(output_size=1)
+        elif global_pool_type == 'channelwise':
+            self.global_pool = ChannelwiseGlobalCombPool2d(num_channels=num_features, aggregations=aggregations)
+        elif global_pool_type == 'gated':
+            raise Exception('Global pooling option "gated" not yet implemented.')
+            # self.global_pool = GatedGlobalCombPool2d(num_channels=out_channels, aggregations=pool_aggrs)
+        else:
+            raise Exception('Global pooling option {} is not implemented.'.format(global_pool_type))
+
         # Linear layer
         if classifier_layers == 1:
             self.classifier = nn.Linear(num_features, num_classes)
@@ -219,7 +233,8 @@ class DenseNetPlus(nn.Module):
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
-        out = F.adaptive_avg_pool2d(out, (1, 1))  # In this case it acts as a common AvgPool2d, but doesn't require to
+        # out = F.adaptive_avg_pool2d(out, (1, 1))  # In this case it acts as a common AvgPool2d, but doesn't require to
+        out = self.global_pool(out)
         # specify the kernel size.
         out = torch.flatten(out, 1)
         out = self.classifier(out)
