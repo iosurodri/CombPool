@@ -136,7 +136,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         elif model_type == 'nin':
             model = SupervisedNiNPlus(pool_layer, global_pool_type, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
         elif model_type == 'dense100':
-            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
+            model = DenseNetPlus(pool_layer=pool_layer, global_pool_type=global_pool_type, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
         elif model_type == 'big_dense121':
             model = BigDenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=121, aggregations=pool_aggrs)
         else:
