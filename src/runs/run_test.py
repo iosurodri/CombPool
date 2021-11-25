@@ -10,6 +10,7 @@ from src.data.save_results import log_eval_metrics
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
 from src.models.DenseNetPlus import DenseNetPlus, BigDenseNetPlus
+from src.models.EfficientNet import EfficientNet
 
 # Model interaction:
 from src.model_tools.train import train
@@ -123,11 +124,10 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
     for test_idx in range(num_runs):
         name = os.path.join(original_name, 'test_{}'.format(test_idx))
         # 1. Data loading:
-        if dataset == 'CIFAR10':
-            train_dataloader, val_dataloader = load_dataset(dataset, batch_size, train=True,
-                                                            train_proportion=train_proportion,
-                                                            val=True, num_workers=num_workers)
-            test_dataloader = load_dataset(dataset, batch_size, train=False, num_workers=num_workers)
+        train_dataloader, val_dataloader = load_dataset(dataset, batch_size, train=True,
+                                                        train_proportion=train_proportion,
+                                                        val=True, num_workers=num_workers)
+        test_dataloader = load_dataset(dataset, batch_size, train=False, num_workers=num_workers)            
 
         # 2. Model initialization:
         pool_layer = pickPoolLayer(pool_type)
@@ -139,6 +139,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = DenseNetPlus(pool_layer=pool_layer, global_pool_type=global_pool_type, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
         elif model_type == 'big_dense121':
             model = BigDenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=121, aggregations=pool_aggrs)
+        elif model_type == 'efficientnet-b4':
+            model = EfficientNet.from_name(model_type, in_channels=3, global_pool_type=global_pool_type, pool_aggrs=pool_aggrs, num_classes=num_classes)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
@@ -146,7 +148,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         # 3. Optimization method:
         # Optimizer initialization (SGD: Stochastic Gradient Descent):
         trainable_parameters = model.parameters()
-
+    
         if optimizer_name == 'sgd':
             # We pass only the non frozen Parameters to the optimizer:
             optimizer = optim.SGD(trainable_parameters, lr=learning_rate,
