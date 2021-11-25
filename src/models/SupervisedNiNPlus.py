@@ -129,7 +129,7 @@ class SupervisedNiNPlus(nn.Module):
                                           kernel_size=1, stride=1, bias=True)
         self.block_3_mlpconv2 = nn.Conv2d(self.network_params['mlpconv_neurons'][2], num_classes, kernel_size=1,
                                           stride=1, bias=True)
-        if global_pool_type == 'avg':
+        if global_pool_type == 'avg' or global_pool_type is None:
             self.global_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
                 # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
                 # having to set the size of the output up at to this point (which may vary depending on the used dataset).

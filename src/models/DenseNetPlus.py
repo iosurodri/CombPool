@@ -143,7 +143,7 @@ class DenseNetPlus(nn.Module):
     #def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
     #             num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
     def __init__(self, growth_rate=12, num_layers=100, bn_size=4, drop_rate=0.2, num_classes=10,
-                 memory_efficient=False, pool_layer=nn.AvgPool2d, global_pool_type='max', in_channels=3, classifier_layers=1, aggregations=None):
+                 memory_efficient=False, pool_layer=nn.AvgPool2d, global_pool_type='avg', in_channels=3, classifier_layers=1, aggregations=None):
 
         super().__init__()
 
@@ -195,7 +195,7 @@ class DenseNetPlus(nn.Module):
         # Final batch norm
         self.features.add_module('norm4', nn.BatchNorm2d(num_features))
 
-        if global_pool_type == 'avg':
+        if global_pool_type == 'avg' or global_pool_type is None:
             self.global_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
                 # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
                 # having to set the size of the output up at to this point (which may vary depending on the used dataset).
