@@ -1,5 +1,6 @@
 import os
 import torchvision.datasets as datasets
+from torchvision.datasets.cifar import CIFAR10
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -14,6 +15,11 @@ PATH_DATA = os.path.join('..', '..', 'data', 'processed')
 standard_datasets_info = {
     'CIFAR10': {
         'dataset': datasets.CIFAR10,
+        'mean': (0.485, 0.456, 0.406),
+        'std': (0.229, 0.224, 0.225),
+    },
+    'CIFAR100': {
+        'dataset': datasets.CIFAR100,
         'mean': (0.485, 0.456, 0.406),
         'std': (0.229, 0.224, 0.225),
     }
@@ -71,6 +77,10 @@ def load_dataset(dataset_name, batch_size=32, train=True, train_proportion=0.8, 
         return load_standard_dataset(dataset_name, batch_size, train, train_proportion, val, num_workers, pin_memory)
     elif dataset_name in custom_datasets_info.keys():
         return load_custom_dataset(dataset_name, batch_size, train, train_proportion, val, num_workers, pin_memory)
+    elif dataset_name == 'efficientnet_b0_cifar10':
+        return load_CIFAR10_for_efficientnet(batch_size, train, train_proportion, val, num_workers, pin_memory, version='b0')
+    elif dataset_name == 'efficientnet_b4_cifar10':
+        return load_CIFAR10_for_efficientnet(batch_size, train, train_proportion, val, num_workers, pin_memory, version='b4')
     else:
         raise Exception('No entry for dataset {}'.format(dataset_name))
 
@@ -192,6 +202,138 @@ def load_custom_dataset(dataset_name, batch_size=32, train=True, train_proportio
         else:
             train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
                                       pin_memory=pin_memory, shuffle=True)
+    else:
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory)
+    # 4.-Return the requested DataLoaders:
+    if train:
+        if val:
+            return train_loader, val_loader
+        else:
+            return train_loader
+    else:
+        return test_loader
+
+
+def load_CIFAR10_for_efficientnet(batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True, version='b4'):
+    
+    input_size = {
+        'b0': 224,
+        'b1': 240,
+        'b2': 260,
+        'b3': 300,
+        'b4': 380,
+        'b5': 456,
+        'b6': 528,
+        'b7': 600
+    }
+
+    # 1.-Prepare transformations to be applied to each set:
+    transform = transforms.Compose(
+        [transforms.Resize(input_size[version], Image.BICUBIC),
+         transforms.RandomHorizontalFlip(),
+         transforms.ToTensor(),
+         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
+        )
+    # 2.-Prepare the datasets:
+    if train:
+        train_dataset = CIFAR10(
+            root=os.path.join('..', '..', 'data', 'external'), train=True,
+            download=True, transform=transform,
+        )
+    else:
+        test_dataset = CIFAR10(
+            root=os.path.join('..', '..', 'data', 'external'), train=False,
+            download=True, transform=transform,
+        )
+    # 3.-Prepare the DataLoaders using the previous Datasets
+    if train:
+        if val:
+            # Split the train dataset into train and validation sets:
+            # Get a random split with a proportion of train_proportion samples for the train subset and the remaining
+            # ones for the validation subset:
+            num_train = len(train_dataset)
+            indices = list(range(num_train))
+            split = int(np.floor(train_proportion * num_train))
+            np.random.shuffle(indices)
+            # Generate some SubsetRandomSampler with the indexes of the images corresponding to each subset:
+            train_idx, val_idx = indices[:split], indices[split:]
+            train_sampler = SubsetRandomSampler(train_idx)
+            val_sampler = SubsetRandomSampler(val_idx)
+            # Generate DataLoader for the images:
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=train_sampler,
+                                      num_workers=num_workers,
+                                      pin_memory=pin_memory, drop_last=True)
+            val_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=val_sampler, num_workers=num_workers,
+                                    pin_memory=pin_memory)
+        else:
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
+                                      pin_memory=pin_memory, shuffle=True, drop_last=True)
+    else:
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory)
+    # 4.-Return the requested DataLoaders:
+    if train:
+        if val:
+            return train_loader, val_loader
+        else:
+            return train_loader
+    else:
+        return test_loader
+
+
+def load_CIFAR100_for_efficientnet(batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True, version='b0'):
+    
+    input_size = {
+        'b0': 224,
+        'b1': 240,
+        'b2': 260,
+        'b3': 300,
+        'b4': 380,
+        'b5': 456,
+        'b6': 528,
+        'b7': 600
+    }
+
+    # 1.-Prepare transformations to be applied to each set:
+    transform = transforms.Compose(
+        [transforms.Resize(input_size[version], Image.BICUBIC),
+         transforms.RandomHorizontalFlip(),
+         transforms.ToTensor(),
+         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
+        )
+    # 2.-Prepare the datasets:
+    if train:
+        train_dataset = CIFAR10(
+            root=os.path.join('..', '..', 'data', 'external'), train=True,
+            download=True, transform=transform,
+        )
+    else:
+        test_dataset = CIFAR10(
+            root=os.path.join('..', '..', 'data', 'external'), train=False,
+            download=True, transform=transform,
+        )
+    # 3.-Prepare the DataLoaders using the previous Datasets
+    if train:
+        if val:
+            # Split the train dataset into train and validation sets:
+            # Get a random split with a proportion of train_proportion samples for the train subset and the remaining
+            # ones for the validation subset:
+            num_train = len(train_dataset)
+            indices = list(range(num_train))
+            split = int(np.floor(train_proportion * num_train))
+            np.random.shuffle(indices)
+            # Generate some SubsetRandomSampler with the indexes of the images corresponding to each subset:
+            train_idx, val_idx = indices[:split], indices[split:]
+            train_sampler = SubsetRandomSampler(train_idx)
+            val_sampler = SubsetRandomSampler(val_idx)
+            # Generate DataLoader for the images:
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=train_sampler,
+                                      num_workers=num_workers,
+                                      pin_memory=pin_memory, shuffle=True, drop_last=True)
+            val_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=val_sampler, num_workers=num_workers,
+                                    pin_memory=pin_memory)
+        else:
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
+                                      pin_memory=pin_memory, shuffle=True, drop_last=True)
     else:
         test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory)
     # 4.-Return the requested DataLoaders:
