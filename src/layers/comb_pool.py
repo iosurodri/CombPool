@@ -3,6 +3,7 @@ import torch.nn.functional as F
 
 import src.functions.aggregation_functions as aggr_funcs
 
+
 class CombPool2d(torch.nn.Module):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1, num_channels=1,
                  aggregations=['avg', 'max'], coefficient_type='channelwise'):
@@ -33,7 +34,7 @@ class CombPool2d(torch.nn.Module):
         elif coefficient_type == 'gated':
             # A series of weights which help to generate a different alpha value for each value of a window            
             self.weight = torch.nn.ParameterList(
-                [torch.nn.Parameter(torch.rand(1, num_channels, 1, 1, kernel_size*kernel_size)) for i in range(len(self.aggregations))]
+                [torch.nn.Parameter(torch.rand(1, num_channels, 1, 1, kernel_size[0]*kernel_size[1])) for i in range(len(self.aggregations))]
             )
         else:
             raise Exception('Wrong option specified for coefficient_type. Must be one of "channelwise" or "gated"')
@@ -75,7 +76,7 @@ class ChannelwiseCombPool2d(CombPool2d):
 class GatedCombPool2d(CombPool2d):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1, num_channels=1,
                  aggregations=['avg', 'max']):
-        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='channelwise')
+        super().__init__(kernel_size, stride, padding, dilation, num_channels, aggregations, coefficient_type='gated')
 
 
 class GlobalCombPool2d(torch.nn.Module):
@@ -134,4 +135,4 @@ class ChannelwiseGlobalCombPool2d(GlobalCombPool2d):
 
 class GatedGlobalCombPool2d(GlobalCombPool2d):
     def __init__(self, num_channels=1, input_size=None, aggregations=['avg', 'max']):
-        super().__init__(num_channels, input_size, aggregations, coefficient_type='channelwise')
+        super().__init__(num_channels, input_size, aggregations, coefficient_type='gated')
