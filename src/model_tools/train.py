@@ -56,8 +56,8 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             pool_idx = 0
             for param in model.children():
                 if type(param) in (ChannelwiseCombPool2d, GatedCombPool2d): 
-                    if param.coefficients is not None:
-                        for coeff_idx, coeff in enumerate(param.coefficients):
+                    if param.weight is not None:
+                        for coeff_idx, coeff in enumerate(param.weight):
                             coefficient = coeff.cpu().detach().numpy().squeeze()
                             if coefficient.size == 1:
                                 writer.add_scalar('pool{}_coefficient{}'.format(pool_idx, coeff_idx), coefficient.item(), 0)
