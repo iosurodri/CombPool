@@ -189,6 +189,7 @@ if __name__ == '__main__':
         # arg is read as a string (as our bash gnu parallel script does), to allow the proper work of argparse:
         sys.argv = [sys.argv[0], *sys.argv[1].split()]
     args = parse_args()
+    #args.pool_type = 'channelwise'
     name = args.name
     model_type = args.model_type[0]
     dataset = args.dataset

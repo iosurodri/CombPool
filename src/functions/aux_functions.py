@@ -1,5 +1,5 @@
 import torch
-from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
+from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d, PenaltyPool2d
 
 
 def pickPoolLayer(pool_type):
@@ -8,7 +8,8 @@ def pickPoolLayer(pool_type):
         'max': torch.nn.MaxPool2d,
         'avg': torch.nn.AvgPool2d,
         'channelwise': ChannelwiseCombPool2d,
-        'gated': GatedCombPool2d
+        'gated': GatedCombPool2d,
+        'penalty': PenaltyPool2d,
     }
     if pool_type not in available_poolings.keys():
         raise Exception('Provided pool type is not available: Must be one of {}'.format(available_poolings.keys()))

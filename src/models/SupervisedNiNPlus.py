@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 from math import ceil, floor
-from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d
+from src.layers.comb_pool import ChannelwiseCombPool2d, GatedCombPool2d, PenaltyPool2d
 
 
 # ToDO: Refactorize this layers to a separate module:
@@ -71,7 +71,7 @@ class SupervisedNiNPlus(nn.Module):
 
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
-        elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d, PenaltyPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, 
                 num_channels=self.network_params['conv_filters'][1], aggregations=aggregations)
         else:

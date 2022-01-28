@@ -1,7 +1,7 @@
 {
     "train_params": {
-        "num_epochs": 300,
-        "batch_size": 64,
+        "num_epochs": 5,
+        "batch_size": 32,
         "val": true,
         "number_logs": 1,
         "pin_memory": false
