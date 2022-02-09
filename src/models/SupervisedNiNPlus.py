@@ -71,11 +71,10 @@ class SupervisedNiNPlus(nn.Module):
 
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
-        elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        # elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        else:
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, 
                 num_channels=self.network_params['conv_filters'][1], aggregations=aggregations)
-        else:
-            self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad)
 
         self.block_1_dropout = nn.Dropout2d(p=0.5, inplace=True)
 
@@ -102,11 +101,10 @@ class SupervisedNiNPlus(nn.Module):
         self.relu6 = nn.ReLU(inplace=True)
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
-        elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        # elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        else:
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad, 
                 num_channels=self.network_params['conv_filters'][3], aggregations=aggregations)
-        else:
-            self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad)
         self.block_2_dropout = nn.Dropout2d(p=0.5, inplace=True)
         self.block_3_conv1 = nn.Conv2d(self.network_params['mlpconv_neurons'][1], self.network_params['conv_filters'][4],
                                        kernel_size=3, stride=1, padding=1)
