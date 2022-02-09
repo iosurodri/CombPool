@@ -66,22 +66,35 @@ def get_std(dataset_train, dataset_mean):
     return dataset_std
 
 
-def load_dataset(dataset_name, batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True):
+def load_dataset(dataset_name, batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True, data_augmentation=False):
     if dataset_name in standard_datasets_info.keys():
-        return load_standard_dataset(dataset_name, batch_size, train, train_proportion, val, num_workers, pin_memory)
+        return load_standard_dataset(dataset_name, batch_size, train, train_proportion, val, num_workers, pin_memory, data_augmentation)
     elif dataset_name in custom_datasets_info.keys():
         return load_custom_dataset(dataset_name, batch_size, train, train_proportion, val, num_workers, pin_memory)
     else:
         raise Exception('No entry for dataset {}'.format(dataset_name))
 
 
-def load_standard_dataset(dataset_name, batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True):
+def load_standard_dataset(dataset_name, batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True, 
+    data_augmentation=False):
 
     if dataset_name not in standard_datasets_info.keys():
         raise Exception('No entry for dataset {}: Provided dataset must be one of {}'.format(
             dataset_name, standard_datasets_info.keys()))
 
     # 1.-Prepare transformations to be applied to each set:
+    if data_augmentation:
+        train_transform = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(standard_datasets_info[dataset_name]['mean'], standard_datasets_info[dataset_name]['std'])]
+        )
+    else:
+        train_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(standard_datasets_info[dataset_name]['mean'], standard_datasets_info[dataset_name]['std'])]
+        )
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize(standard_datasets_info[dataset_name]['mean'], standard_datasets_info[dataset_name]['std'])]
@@ -90,7 +103,7 @@ def load_standard_dataset(dataset_name, batch_size=32, train=True, train_proport
     if train:
         train_dataset = standard_datasets_info[dataset_name]['dataset'](
             root=os.path.join('..', '..', 'data', 'external'), train=True,
-            download=True, transform=transform,
+            download=True, transform=train_transform,
         )
     else:
         test_dataset = standard_datasets_info[dataset_name]['dataset'](
