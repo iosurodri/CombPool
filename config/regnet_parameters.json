@@ -1,0 +1,37 @@
+{
+    "train_params": {
+        "num_epochs": 300,
+        "batch_size": 64,
+        "val": true,
+        "number_logs": 1,
+        "pin_memory": false
+    },
+    "dataset_params": {
+        "CIFAR10": {
+            "num_classes": 10,
+            "input_size": [32, 32, 3],
+            "num_training_samples": 50000,
+            "train_proportion": 0.8,
+            "num_workers": 2 
+        }
+    },
+    "model_params": {
+        "regnet_x_200mf": {
+            "learning_rate": 0.1,
+            "momentum": 0.9,
+            "optimizer": "sgd",
+            "weight_decay": 0.0005,
+            "scheduler_type": "cosine",
+            "scheduler_t_max": 200
+        },
+        "regnet_x_400mf": {
+            "learning_rate": 0.1,
+            "momentum": 0.9,
+            "optimizer": "sgd",
+            "weight_decay": 0.0005,
+            "scheduler_type": "cosine",
+            "scheduler_t_max": 200
+        }
+    }
+  }
+  
