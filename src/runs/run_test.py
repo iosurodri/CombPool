@@ -10,6 +10,7 @@ from src.data.save_results import log_eval_metrics
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
 from src.models.DenseNetPlus import DenseNetPlus, BigDenseNetPlus
+from src.models.RegNet import RegNetX_200MF, RegNetX_400MF, RegNetY_400MF
 
 # Model interaction:
 from src.model_tools.train import train
@@ -53,11 +54,13 @@ def parse_args():
     CLI.add_argument("--log_param_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution
         of custom learnable parameters are logged (using tensorboard) or not.""")
     CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
+    CLI.add_argument("--data_augmentation", nargs="?", type=bool, default=False, help="""Indicates whether data augmentation techniques
+        will be applied to train dataset.""")
     return CLI.parse_args()
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    pool_type='channelwise', pool_aggrs=None, num_runs=5):
+    data_augmentation=False, pool_type='channelwise', pool_aggrs=None, num_runs=5):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -92,8 +95,12 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             use_batch_norm = model_params['use_batch_norm']
             info_data['use_batch_norm'] = use_batch_norm
 
-        scheduler_factor = model_params['scheduler_factor']
-        scheduler_min_lr = model_params['scheduler_min_lr']
+        scheduler_type = model_params['scheduler_type']
+        if scheduler_type == 'cosine':
+            scheduler_t_max = model_params['scheduler_t_max']
+        else:
+            scheduler_factor = model_params['scheduler_factor']
+            scheduler_min_lr = model_params['scheduler_min_lr']
         optimizer_name = model_params['optimizer']
         learning_rate = model_params['learning_rate']
         weight_decay = model_params['weight_decay']
@@ -124,7 +131,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         if dataset == 'CIFAR10':
             train_dataloader, val_dataloader = load_dataset(dataset, batch_size, train=True,
                                                             train_proportion=train_proportion,
-                                                            val=True, num_workers=num_workers)
+                                                            val=True, num_workers=num_workers, 
+                                                            data_augmentation=data_augmentation)
             test_dataloader = load_dataset(dataset, batch_size, train=False, num_workers=num_workers)
 
         # 2. Model initialization:
@@ -138,6 +146,16 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
         elif model_type == 'big_dense121':
             model = BigDenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=121, aggregations=pool_aggrs)
+        # TODO: Debug EfficientNet
+        elif model_type == 'efficientnet_b0':
+            from torchvision.models import efficientnet_b0
+            model = efficientnet_b0(pretrained=True)
+        elif model_type == 'regnet_x_200mf':
+            model = RegNetX_200MF(pool_layer=pool_layer, aggregations=pool_aggrs)
+        elif model_type == 'regnet_x_400mf':
+            # from torchvision.models import regnet_x_400mf
+            # model = regnet_x_400mf(pretrained=True)
+            model = RegNetX_400MF()
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
@@ -159,8 +177,11 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             raise Exception('Compatibility with the given optimizer has not been implemented yet')
 
         # Scheduler: On plateau
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
-                                                        min_lr=scheduler_min_lr)
+        if scheduler_type == 'cosine':
+            scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=scheduler_t_max)
+        else:
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
+                                                            min_lr=scheduler_min_lr)
 
         # Set the loss function:
         if model_type == 'nin':
@@ -198,5 +219,6 @@ if __name__ == '__main__':
     pool_aggrs = args.pool_aggrs
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
+    data_augmentation = args.data_augmentation
     full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, pool_aggrs=pool_aggrs, num_runs=num_runs, save_checkpoints=save_checkpoints, 
-        config_file_name=config_file_name, log_param_dist=log_param_dist)
+        config_file_name=config_file_name, log_param_dist=log_param_dist, data_augmentation=data_augmentation)
