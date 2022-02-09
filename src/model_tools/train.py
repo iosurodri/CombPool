@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.optim as optim
 from torch.utils.tensorboard.writer import SummaryWriter
 # Auxiliary functions:
 from math import ceil, floor
@@ -178,6 +179,9 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         if scheduler is not None:
             # scheduler.step()
             # DEBUG: Using reduce on plateau:
-            scheduler.step(running_loss_val / (i_val + 1))
+            if type(scheduler) == optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running_loss_val / (i_val + 1))
+            else:
+                scheduler.step()
             print(optimizer.param_groups[0]['lr'])
     return model, train_loss, train_acc, val_loss, val_acc
