@@ -7,6 +7,7 @@ def pickPoolLayer(pool_type):
     available_poolings = {
         'max': torch.nn.MaxPool2d,
         'avg': torch.nn.AvgPool2d,
+        'gap': torch.nn.AdaptiveAvgPool2d,
         'channelwise': ChannelwiseCombPool2d,
         'gated': GatedCombPool2d,
         'penalty_norm1': lambda kernel_size, stride=None, padding=0, dilation=1, num_channels=1,
