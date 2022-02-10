@@ -95,12 +95,16 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             use_batch_norm = model_params['use_batch_norm']
             info_data['use_batch_norm'] = use_batch_norm
 
-        scheduler_type = model_params['scheduler_type']
+        if 'scheduler_type' in model_params.keys():
+            scheduler_type = model_params['scheduler_type']
+        else:
+            # By default use "optim.ReduceLROnPlateau"
+            scheduler_type = 'on_plateau'
         if scheduler_type == 'cosine':
             scheduler_t_max = model_params['scheduler_t_max']
         else:
             scheduler_factor = model_params['scheduler_factor']
-            scheduler_min_lr = model_params['scheduler_min_lr']
+            scheduler_min_lr = model_params['scheduler_min_lr']    
         optimizer_name = model_params['optimizer']
         learning_rate = model_params['learning_rate']
         weight_decay = model_params['weight_decay']
