@@ -102,6 +102,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             scheduler_type = 'on_plateau'
         if scheduler_type == 'cosine':
             scheduler_t_max = model_params['scheduler_t_max']
+        elif scheduler_type == 'cosine_warm':
+            scheduler_t_0 = model_params['scheduler_t_0']
         else:
             scheduler_factor = model_params['scheduler_factor']
             scheduler_min_lr = model_params['scheduler_min_lr']    
@@ -183,6 +185,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         # Scheduler: On plateau
         if scheduler_type == 'cosine':
             scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=scheduler_t_max)
+        elif scheduler_type == 'cosine_warm':
+            scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=scheduler_t_0)
         else:
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
                                                             min_lr=scheduler_min_lr)
