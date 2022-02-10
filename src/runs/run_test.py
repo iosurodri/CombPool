@@ -157,11 +157,9 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             from torchvision.models import efficientnet_b0
             model = efficientnet_b0(pretrained=True)
         elif model_type == 'regnet_x_200mf':
-            model = RegNetX_200MF(pool_layer=pool_layer, aggregations=pool_aggrs)
+            model = RegNetX_200MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         elif model_type == 'regnet_x_400mf':
-            # from torchvision.models import regnet_x_400mf
-            # model = regnet_x_400mf(pretrained=True)
-            model = RegNetX_400MF()
+            model = RegNetX_400MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)

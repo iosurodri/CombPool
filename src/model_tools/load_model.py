@@ -5,6 +5,8 @@ from src.functions.aux_functions import pickPoolLayer
 
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
+from src.models.DenseNetPlus import DenseNetPlus
+from src.models.RegNet import RegNetX_200MF, RegNetX_400MF, RegNetY_400MF
 
 
 PATH_MODELS = os.path.join('..', '..', 'reports', 'models')
@@ -49,6 +51,15 @@ def load_model(file_name, model_type, info_file_name=None, info_data=None):
         num_classes = info_data['num_classes']
         pool_aggrs = info_data['pool_aggrs']
         model = SupervisedNiNPlus(pool_layer, in_channels=input_size[0], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
+    elif model_type == 'dense100':
+        input_size = info_data['input_size']
+        num_classes = info_data['num_classes']
+        pool_aggrs = info_data['pool_aggrs']
+        model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
+    elif model_type == 'regnet_x_200mf':
+        num_classes = info_data['num_classes']
+        pool_aggrs = info_data['pool_aggrs']
+        model = RegNetX_200MF(pool_layer=pool_layer, aggregations=pool_aggrs)
     else:
         raise Exception('{} model type unavailable.'.format(model_type))
     # Load the state_dict of the model into the newly created model (load the learnt parameters):
