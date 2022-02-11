@@ -21,8 +21,8 @@
             "momentum": 0.9,
             "optimizer": "sgd",
             "weight_decay": 0.0005,
-            "scheduler_type": "cosine_warm",
-            "scheduler_t_0": 50
+            "scheduler_type": "cosine",
+            "scheduler_t_max": 200
         },
         "regnet_x_400mf": {
             "learning_rate": 0.1,
