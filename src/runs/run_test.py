@@ -160,6 +160,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = RegNetX_200MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         elif model_type == 'regnet_x_400mf':
             model = RegNetX_400MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
+        elif model_type == 'regnet_y_400mf':
+            model = RegNetY_400MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)

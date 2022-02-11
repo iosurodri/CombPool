@@ -31,6 +31,14 @@
             "weight_decay": 0.0005,
             "scheduler_type": "cosine",
             "scheduler_t_max": 200
+        },
+        "regnet_y_400mf": {
+            "learning_rate": 0.1,
+            "momentum": 0.9,
+            "optimizer": "sgd",
+            "weight_decay": 0.0005,
+            "scheduler_type": "cosine",
+            "scheduler_t_max": 200
         }
     }
 }
