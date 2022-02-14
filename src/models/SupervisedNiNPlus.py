@@ -35,7 +35,7 @@ class SupervisedNiNPlus(nn.Module):
         'mlpconv_neurons': (128, 192, 256)
     }
 
-    def __init__(self, pool_layer=nn.MaxPool2d, supervision_type='softmax', in_channels=3, num_classes=10, input_size=(32, 32), 
+    def __init__(self, pool_layer=nn.MaxPool2d, global_pool_layer=nn.AdaptiveAvgPool2d, supervision_type='softmax', in_channels=3, num_classes=10, input_size=(32, 32), 
         aggregations=None):
         '''Constructor method
 
@@ -125,7 +125,14 @@ class SupervisedNiNPlus(nn.Module):
         self.block_3_mlpconv2 = nn.Conv2d(self.network_params['mlpconv_neurons'][2], num_classes, kernel_size=1,
                                           stride=1, bias=True)
 
-        self.avg_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
+        # Added support for GlobalCombPool layers:
+        if global_pool_layer in (nn.AdaptiveAvgPool2d,):
+            self.global_pool = global_pool_layer((1, 1))
+        # elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        else:
+            self.global_pool = global_pool_layer(kernel_size=8, stride=1, 
+                padding=0, num_channels=num_classes, aggregations=aggregations)
+        # self.avg_pool = nn.AdaptiveAvgPool2d(output_size=1)  # AdaptiveAvgPool2d can be used as Global Average Pooling
             # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
             # having to set the size of the output up at to this point (which may vary depending on the used dataset).
 
@@ -170,7 +177,7 @@ class SupervisedNiNPlus(nn.Module):
             x_supervised.append(self.block_3_supervision2(x))
         x = self.block_3_mlpconv1(x)
         x = self.block_3_mlpconv2(x)
-        x = self.avg_pool(x)
+        x = self.global_pool(x)
 
         x = x.reshape([x.shape[0], x.shape[1]])
 

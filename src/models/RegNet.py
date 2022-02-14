@@ -67,7 +67,7 @@ class Block(nn.Module):
 
 
 class RegNet(nn.Module):
-    def __init__(self, cfg, num_classes=10, pool_layer=nn.AdaptiveAvgPool2d, aggregations=None):
+    def __init__(self, cfg, num_classes=10, global_pool_layer=nn.AdaptiveAvgPool2d, aggregations=None):
         super(RegNet, self).__init__()
         self.cfg = cfg
         self.in_planes = 64
@@ -78,11 +78,11 @@ class RegNet(nn.Module):
         self.layer2 = self._make_layer(1)
         self.layer3 = self._make_layer(2)
         self.layer4 = self._make_layer(3)
-        if pool_layer in (nn.AdaptiveAvgPool2d,):
-            self.global_pool = pool_layer((1, 1))
+        if global_pool_layer in (nn.AdaptiveAvgPool2d,):
+            self.global_pool = global_pool_layer((1, 1))
         # elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
         else:
-            self.global_pool = pool_layer(kernel_size=8, stride=1, padding=0, 
+            self.global_pool = global_pool_layer(kernel_size=8, stride=1, padding=0, 
                 num_channels=self.cfg['widths'][-1], aggregations=aggregations)
         self.linear = nn.Linear(self.cfg['widths'][-1], num_classes)
         
@@ -116,7 +116,7 @@ class RegNet(nn.Module):
         return out
 
 
-def RegNetX_200MF(pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=None):
+def RegNetX_200MF(global_pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=None):
     cfg = {
         'depths': [1, 1, 4, 7],
         'widths': [24, 56, 152, 368],
@@ -125,10 +125,10 @@ def RegNetX_200MF(pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=
         'bottleneck_ratio': 1,
         'se_ratio': 0,
     }
-    return RegNet(cfg, pool_layer=pool_layer, num_classes=num_classes, aggregations=aggregations)
+    return RegNet(cfg, global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=aggregations)
 
 
-def RegNetX_400MF(pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=None):
+def RegNetX_400MF(global_pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=None):
     cfg = {
         'depths': [1, 2, 7, 12],
         'widths': [32, 64, 160, 384],
@@ -137,10 +137,10 @@ def RegNetX_400MF(pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=
         'bottleneck_ratio': 1,
         'se_ratio': 0,
     }
-    return RegNet(cfg, pool_layer=pool_layer, num_classes=num_classes, aggregations=aggregations)
+    return RegNet(cfg, global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=aggregations)
 
 
-def RegNetY_400MF(pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=None):
+def RegNetY_400MF(global_pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=None):
     cfg = {
         'depths': [1, 2, 7, 12],
         'widths': [32, 64, 160, 384],
@@ -149,7 +149,7 @@ def RegNetY_400MF(pool_layer=nn.AdaptiveAvgPool2d, num_classes=10, aggregations=
         'bottleneck_ratio': 1,
         'se_ratio': 0.25,
     }
-    return RegNet(cfg, pool_layer=pool_layer, num_classes=num_classes, aggregations=aggregations)
+    return RegNet(cfg, global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=aggregations)
 
 
 def test():

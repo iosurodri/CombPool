@@ -143,7 +143,8 @@ class DenseNetPlus(nn.Module):
     #def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
     #             num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
     def __init__(self, growth_rate=12, num_layers=100, bn_size=4, drop_rate=0.2, num_classes=10,
-                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1, aggregations=None):
+                 memory_efficient=False, pool_layer=nn.AvgPool2d, in_channels=3, classifier_layers=1, aggregations=None,
+                 global_pool_layer=nn.AdaptiveAvgPool2d):
 
         super().__init__()
 
@@ -206,6 +207,14 @@ class DenseNetPlus(nn.Module):
             ]))
         else:
             raise Exception('Unavailable number of classifier layers for this model: classifier_layers must be 1 or 2.')
+
+        # Added support for GlobalCombPool layers:
+        if global_pool_layer in (nn.AdaptiveAvgPool2d,):
+            self.global_pool = global_pool_layer((1, 1))
+        # elif pool_layer in (ChannelwiseCombPool2d, GatedCombPool2d):
+        else:
+            self.global_pool = global_pool_layer(kernel_size=8, stride=1, 
+                padding=0, num_channels=num_features, aggregations=aggregations)
         # Official init from torch repo.
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -219,7 +228,8 @@ class DenseNetPlus(nn.Module):
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
-        out = F.adaptive_avg_pool2d(out, (1, 1))  # In this case it acts as a common AvgPool2d, but doesn't require to
+        # out = F.adaptive_avg_pool2d(out, (1, 1))  # In this case it acts as a common AvgPool2d, but doesn't require to
+        out = self.global_pool(out)
         # specify the kernel size.
         out = torch.flatten(out, 1)
         out = self.classifier(out)

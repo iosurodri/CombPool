@@ -45,6 +45,8 @@ def parse_args():
                                                          'current date and time will be used instead')
     CLI.add_argument("--pool_type", nargs="?", type=str, default='max', help="""Specifies the pooling layer to use. Defaults to MaxPool2d.
         Set 'channelwise' for ChannelwiseCombPool2d. Set 'gated' for GatedCombPool2d.""")
+    CLI.add_argument("--global_pool_type", nargs="?", type=str, default='gap', help="""Specifies the global pooling layer to use. Defaults 
+        to "gap" (AdaptiveAvgPool2d or Global Average Pooling). Set 'channelwise' for ChannelwiseCombPool2d.""")
     CLI.add_argument("--pool_aggrs",  nargs="*", type=str, default=None, help="""List of aggregations to be used as pooling function. 
         If None, pool_type should specify a fully functional pooling layer. If 'max', torch.nn.MaxPool2d will be used. 
         If 'avg', torch.nn.AvgPool2d will be used. """)
@@ -60,7 +62,7 @@ def parse_args():
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    data_augmentation=False, pool_type='channelwise', pool_aggrs=None, num_runs=5):
+    data_augmentation=False, pool_type='channelwise', global_pool_type='avg', pool_aggrs=None, num_runs=5):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -113,6 +115,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         momentum = model_params['momentum']
 
         info_data['pool_type'] = pool_type
+        info_data['global_pool_type'] = global_pool_type
         info_data['pool_aggrs'] = pool_aggrs
 
     # Create folders for reports associated to test if not existant:
@@ -143,13 +146,14 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
 
         # 2. Model initialization:
         pool_layer = pickPoolLayer(pool_type)
+        global_pool_layer = pickPoolLayer(global_pool_type)
 
         if model_type == 'lenet': 
             model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm, aggregations=pool_aggrs)
         elif model_type == 'nin':
-            model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
+            model = SupervisedNiNPlus(pool_layer, global_pool_layer=global_pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], aggregations=pool_aggrs)
         elif model_type == 'dense100':
-            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
+            model = DenseNetPlus(pool_layer=pool_layer, global_pool_layer=global_pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=100, aggregations=pool_aggrs)
         elif model_type == 'big_dense121':
             model = BigDenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes, num_layers=121, aggregations=pool_aggrs)
         # TODO: Debug EfficientNet
@@ -157,11 +161,11 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             from torchvision.models import efficientnet_b0
             model = efficientnet_b0(pretrained=True)
         elif model_type == 'regnet_x_200mf':
-            model = RegNetX_200MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
+            model = RegNetX_200MF(global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         elif model_type == 'regnet_x_400mf':
-            model = RegNetX_400MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
+            model = RegNetX_400MF(global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         elif model_type == 'regnet_y_400mf':
-            model = RegNetY_400MF(pool_layer=pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
+            model = RegNetY_400MF(global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
@@ -224,9 +228,11 @@ if __name__ == '__main__':
     num_runs = args.num_runs
     config_file_name = args.config_file_name
     pool_type = args.pool_type
+    global_pool_type = args.global_pool_type
     pool_aggrs = args.pool_aggrs
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
     data_augmentation = args.data_augmentation
-    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, pool_aggrs=pool_aggrs, num_runs=num_runs, save_checkpoints=save_checkpoints, 
-        config_file_name=config_file_name, log_param_dist=log_param_dist, data_augmentation=data_augmentation)
+    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, global_pool_type=global_pool_type, 
+        pool_aggrs=pool_aggrs, num_runs=num_runs, save_checkpoints=save_checkpoints, config_file_name=config_file_name, 
+        log_param_dist=log_param_dist, data_augmentation=data_augmentation)
