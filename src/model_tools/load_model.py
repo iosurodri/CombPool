@@ -65,15 +65,15 @@ def load_model(file_name, model_type, info_file_name=None, info_data=None):
     elif model_type == 'regnet_x_200mf':
         num_classes = info_data['num_classes']
         pool_aggrs = info_data['pool_aggrs']
-        model = RegNetX_200MF(global_pool_layer=global_pool_layer, num_classes=100, aggregations=pool_aggrs)
+        model = RegNetX_200MF(global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
     elif model_type == 'regnet_x_400mf':
         num_classes = info_data['num_classes']
         pool_aggrs = info_data['pool_aggrs']
-        model = RegNetX_400MF(global_pool_layer=global_pool_layer, num_classes=100, aggregations=pool_aggrs)
+        model = RegNetX_400MF(global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
     elif model_type == 'regnet_y_400mf':
         num_classes = info_data['num_classes']
         pool_aggrs = info_data['pool_aggrs']
-        model = RegNetY_400MF(global_pool_layer=global_pool_layer, num_classes=100, aggregations=pool_aggrs)
+        model = RegNetY_400MF(global_pool_layer=global_pool_layer, num_classes=num_classes, aggregations=pool_aggrs)
     else:
         raise Exception('{} model type unavailable.'.format(model_type))
     # Load the state_dict of the model into the newly created model (load the learnt parameters):
