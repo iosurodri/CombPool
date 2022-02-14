@@ -137,7 +137,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
     for test_idx in range(num_runs):
         name = os.path.join(original_name, 'test_{}'.format(test_idx))
         # 1. Data loading:
-        if dataset == 'CIFAR10':
+        if dataset in ('CIFAR10', 'CIFAR100'):
             train_dataloader, val_dataloader = load_dataset(dataset, batch_size, train=True,
                                                             train_proportion=train_proportion,
                                                             val=True, num_workers=num_workers, 
