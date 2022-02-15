@@ -18,7 +18,7 @@ standard_datasets_info = {
         'std': (0.229, 0.224, 0.225),
     },
     'CIFAR100': {
-        'dataset': datasets.CIFAR10,
+        'dataset': datasets.CIFAR100,
         'mean': (0.485, 0.456, 0.406),
         'std': (0.229, 0.224, 0.225),
     }
